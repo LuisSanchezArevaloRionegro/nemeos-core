@@ -5,13 +5,13 @@ db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    last_name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    phone = db.Column(db.String(80), nullable=False)
-    password = db.Column(db.String(80), nullable=False)
-    is_active = db.Column(db.Boolean(), nullable=False, default=False)
-    deleted = db.Column(db.Boolean(), nullable=False, default=False)
+    name = db.Column(db.String(120), nullable=True)
+    last_name = db.Column(db.String(120), nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    phone = db.Column(db.String(80), nullable=True)
+    password = db.Column(db.String(80), nullable=True)
+    is_active = db.Column(db.Boolean(), nullable=True, default=False)
+    deleted = db.Column(db.Boolean(), nullable=True, default=False)
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -27,6 +27,22 @@ class User(db.Model):
             "deleted": self.deleted,
             # do not serialize the password, its a security breach
         }
+    def save(self):
+        db.session.add(self)  
+        db.session.commit()
+        return self
+
+    @classmethod
+    def get_id(cls, email):
+        return db.session.query(cls).filter(cls.email==email).first()
+
+    @classmethod
+    def get_all(cls):
+        return db.session.query(cls).all()
+
+    @classmethod
+    def is_authenticated(self):
+        return True
 
 class Form(db.Model):
     __tablename__ = 'form'
