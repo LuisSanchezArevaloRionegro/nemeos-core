@@ -60,14 +60,13 @@ def get_user_by_email(email):
 @app.route('/user', methods=['POST'])
 def new_user():
     body = request.get_json()
+   
     if 'email' in body and 'password' in body:
         user = User(name = body['name'],last_name = body['last_name'],
                 email = body['email'], password = body['password'],
-                phone = body['phone'],is_active = body['is_active'],deleted = body['deleted'])
-        #user.save()
-        db.session.add(user)  
-        db.session.commit()
-
+                phone = body['phone'],deleted = body['deleted'])
+        user.save()
+        
         return jsonify(user.serialize()), 200
     else:    
         return 'Some parameters are missing', 400
