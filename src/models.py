@@ -22,6 +22,7 @@ class User(db.Model):
             "last_name": self.last_name,
             "email": self.email,
             "phone": self.phone,
+            "password": self.password,
             "deleted": self.deleted,
             # do not serialize the password, its a security breach
         }
@@ -33,6 +34,10 @@ class User(db.Model):
     @classmethod
     def get_id(cls, email):
         return db.session.query(cls).filter(cls.email==email).first()
+
+    @classmethod
+    def get_name(cls, name):
+        return db.session.query(cls).filter(cls.name==name).first()    
 
     @classmethod
     def get_all(cls):
