@@ -29,7 +29,6 @@ class User(db.Model):
             "last_name": self.last_name,
             "email": self.email,
             "phone": self.phone,
-            "is_active": self.is_active,
             "deleted": self.deleted,
             # do not serialize the password, its a security breach
         }
@@ -38,19 +37,25 @@ class Form(db.Model):
     __tablename__ = 'form'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    weight = db.Column(db.Float, nullable=False)
-    height = db.Column(db.Float, nullable=False)
     age = db.Column(db.Integer, nullable=False)
+    dedication = db.Column(db.Float, nullable=False)
+    height = db.Column(db.Float, nullable=False)
+    weight = db.Column(db.Float, nullable=False)
+    goal_id = db.Column(db.Integer, db.ForeignKey("goals.id"))
     deleted = db.Column(db.Boolean(), nullable=False, default=False)
     user = relationship("User", back_populates="form")
+    goals = relationship("Goal", back_populates="form")
 
     def serialize(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
-            "weight": self.weight,
-            "height": self.height,
             "age": self.age,
+            "dedication": self.dedication,
+            "height": self.height,
+            "weight": self.weight,
+            "goal_id": self.goal_id,
+            "deleted": self.deleted,
         }
 
 class Workout(db.Model):
@@ -79,7 +84,40 @@ class Exercise(db.Model):
     __tablename__ = 'exercises'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
+    name_en = db.Column(db.String(80), nullable=False)
+    type = db.Column(db.String(80), nullable=False)
     deleted = db.Column(db.Boolean(), nullable=False, default=False)
+    material = relationship("Material", uselist=False, back_populates="exercises")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "name_en": self.name_en,
+            "deleted": self.deleted,
+        }
+
+class Goal(db.Model):
+    __tablename__ = 'goals'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    deleted = db.Column(db.Boolean(), nullable=False, default=False)
+    form = relationship('Form', back_populates='goals', uselist=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "deleted": self.deleted,
+        }
+
+class Material(db.Model):
+    __tablename__ = 'material'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    exercise_id = Column(Integer, ForeignKey('exercises.id'))
+    deleted = db.Column(db.Boolean(), nullable=False, default=False)
+    exercises = relationship("Exercise", back_populates="material")
 
     def serialize(self):
         return {
