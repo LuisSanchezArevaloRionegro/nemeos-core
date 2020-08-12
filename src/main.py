@@ -9,7 +9,15 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Form, Workout, Exercise
-from flask_jwt_extended import jwt_required
+from flask_login import LoginManager
+from flask_login import UserMixin
+from flask_wtf import FlaskForm
+from wtforms import StringField
+from wtforms.validators import DataRequired
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    get_jwt_identity
+)
 #from models import Person
 
 app = Flask(__name__)
@@ -20,6 +28,19 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
+app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
+jwt = JWTManager(app)
+
+login_manager = LoginManager(app)
+login_manager.init_app(app)
+
+class UserObject:
+    def __init__(self, username):
+        self.username = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -31,14 +52,29 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+@app.route('/login', methods=['POST'])
+def login():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+    params = request.get_json()
+    email = params.get('email', None)
+    password = params.get('password', None)
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+    if not email:
+        return jsonify({"msg": "Missing email parameter"}), 400
 
-    return jsonify(response_body), 200
+    # if password != 'test' or email != 'test':
+    #     return jsonify({"msg": "Bad password or email"}), 401
+
+    usercheck = User.query.filter_by(password=password, email=email).first()
+    if usercheck == None:
+      return jsonify({"msg": "Bad password or email"}), 401
+
+    # Identity can be any data that is json serializable
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token), 200
 
 @app.route('/user/create', methods=['POST'])
 def add_user():
@@ -98,6 +134,13 @@ def add_workout():
     db.session.add(form)
     db.session.commit()
     return jsonify(form.serialize()), 200
+
+@app.route('/protected', methods=['GET'])
+@jwt_required
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200    
 
 @app.route('/exercise/create', methods=['POST'])
 def add_exercise():

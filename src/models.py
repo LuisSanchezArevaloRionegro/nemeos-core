@@ -32,6 +32,26 @@ class User(db.Model):
             "deleted": self.deleted,
             # do not serialize the password, its a security breach
         }
+    def save(self):
+        db.session.add(self)  
+        db.session.commit()
+        return self
+
+    @classmethod
+    def get_id(cls, email):
+        return db.session.query(cls).filter(cls.email==email).first()
+
+    @classmethod
+    def get_name(cls, name):
+        return db.session.query(cls).filter(cls.name==name).first()    
+
+    @classmethod
+    def get_all(cls):
+        return db.session.query(cls).all()
+
+    @classmethod
+    def is_authenticated(self):
+        return True
 
 class Form(db.Model):
     __tablename__ = 'form'
