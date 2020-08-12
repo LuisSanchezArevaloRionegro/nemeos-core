@@ -102,39 +102,36 @@ def add_workout():
 @app.route('/exercise/create', methods=['POST'])
 def add_exercise():
     body = request.get_json()
-    if 'name' not in body:
-        return 'please specify name',400
-    if 'name_en' not in body:
-        return 'please specify name_en',400
-    if 'type' not in body:
-        return 'please specify type',400
-    
-    exercise = Exercise(name=body['name'], name_en=body['name_en'], type=body['type'])
-    db.session.add(exercise)
-    db.session.commit()
-    return jsonify(exercise.serialize()), 200
-
-@app.route('/exercise/createList', methods=['POST'])
-def add_exercise_list():
-    body = request.get_json()
 
     # creating list        
     exercise_list = []   
 
-    for exercise_body in body:
-        if 'name' not in exercise_body:
+    if isinstance(body, list):
+        for exercise_body in body:
+            if 'name' not in exercise_body:
+                return 'please specify name',400
+            if 'name_en' not in exercise_body:
+                return 'please specify name_en',400
+            if 'type' not in exercise_body:
+                return 'please specify type',400
+            exercise = Exercise(name=exercise_body['name'], name_en=exercise_body['name_en'], type=exercise_body['type'])
+            exercise_list.append(exercise)
+        
+        db.session.add_all(exercise_list)
+        db.session.commit()
+        return jsonify(exercises=[exercise.serialize() for exercise in exercise_list]), 200
+    else:
+        if 'name' not in body:
             return 'please specify name',400
-        if 'name_en' not in exercise_body:
+        if 'name_en' not in body:
             return 'please specify name_en',400
-        if 'type' not in exercise_body:
+        if 'type' not in body:
             return 'please specify type',400
-        exercise = Exercise(name=exercise_body['name'], name_en=exercise_body['name_en'], type=exercise_body['type'])
-        exercise_list.append(exercise)
-    
-    db.session.add_all(exercise_list)
-    db.session.commit()
-
-    return jsonify(exercises=[exercise.serialize() for exercise in exercise_list]), 200
+        
+        exercise = Exercise(name=body['name'], name_en=body['name_en'], type=body['type'])
+        db.session.add(exercise)
+        db.session.commit()
+        return jsonify(exercise.serialize()), 200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
